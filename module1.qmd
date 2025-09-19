@@ -13,11 +13,11 @@ library(ggplot2)
 
 ## Team members, etc
 
-List your team member(s):
+List your team member(s): None other than me (Anna Figge)
 
-Include a link to your forked GH repository:
+Include a link to your forked GH repository: <https://github.com/AFhmc/CLES131-module1-climate>
 
-Include a link to your .qmd file:
+Include a link to your .qmd file: <https://github.com/AFhmc/CLES131-module1-climate/blob/main/module1.qmd>
 
 ## CO2 trends from Mauna Loa
 
