@@ -8,14 +8,16 @@ editor: visual
 #| warning: false
 #| output-location: false
 library(tidyverse)
+library(ggplot2)
 ```
+
 ## Team members, etc
+
 List your team member(s):
 
 Include a link to your forked GH repository:
 
 Include a link to your .qmd file:
-
 
 ## CO2 trends from Mauna Loa
 
@@ -44,13 +46,46 @@ head(co2)
 
 Create a timeseries plot of average \[CO~2~\]. Use `as.Date()` to create a formatted date for the x-axis. Label both the y-axis and add a line to connect the points.
 
+I used a bunch of googling to figure out how to do the string transformations to get the date format working
+
+```{r}
+#Get the formatted date for x-acis
+doy <- as.integer((365*co2$decimal_date)%%365)
+char_date <- paste(as.character(co2$year), doy, sep = "-")
+co2["Date"] <-as.Date(char_date, format = "%Y-%j")
+```
+
+```{r}
+ggplot(data = co2, aes(x = Date, y = average)) + geom_line() + geom_point(size = 0.5) +
+  labs(x = "Date", y = "Average CO2 at Mauna Loa")
+```
+
 ### Q2 (1 point)
 
 What months are the \[CO~2~\] values at the maximum? Create another dataframe with these months selected and create a plot like above, but with the maximum months colored in "forestgreen".
 
+I didn't know exactly how to interpret this question (how many months to color, should I pick the maximum of that year or do the same months every year), so I first found in each year which month was the maximum. I found that in all but 6 years, month number 5 (May) had the highest CO2; with 4 years having April and 2 years having June. I chose to color the singular month with the highest average CO2 in each year forest green.
+
+```{r}
+#get the row with the highest average co2 for each year
+max_month <- co2 |> group_by(year) |> filter(average == max(average))
+
+#count how often each month shows up in that
+max_month |> ungroup() |> count(month)
+```
+
+```{r}
+ggplot(data = co2, aes(x = Date, y = average)) + geom_line() + geom_point(size = 0.5) + geom_point(data = max_month, color= 'forestgreen', size = 0.6) +
+  labs(x = "Date", y = "Average CO2 at Mauna Loa")
+```
+
 ### Q3 (1 point)
 
 What explains the seasonal variation in \[CO~2~\]? After reading Lewandowsky et al. 2016, how might you go about separating the long term trend and the seasonal variation in \[CO~2~\]?
+
+The seasonal variation in CO2 is explained by photosynthesis. Most plants are in the northern hemisphere, meaning that they photosynthesize (pulling carbon out of the air) during summer, while in winter they don't photosynthesize while respiration continues to happen, releasing CO2 and causing it to build up until it's pulled out of the air again in summer.
+
+After reading Lewandowsky et al. 2016, I'm very aware that looking at the trend over a short period or even multiple short periods could result in confusing short term variations for a long term trend; although I think even the short terms they used were longer than would see seasonal variation (decadal time scales). Perhaps though, I would average the CO2 values for each year and perform analysis on that to entirely remove the seasonal variation.
 
 ## Global temperature
 
@@ -62,19 +97,38 @@ Read some [background](https://data.giss.nasa.gov/gistemp/history/background.htm
 
 How are the measurements made? Describe each column in the dataset and its units. What are the resolution of the data?
 
+The measurement is made by taking measurements at stations 1200km apart over the entire Earth, then taking the mean over the entire year. The columns are years (obvious, the year the data was taken), no_smoothing (the mean annual global temperature anomaly for that year, aka the mean annual global temeperature minus the longterm average over 1951 to 1970, in degrees celcius), and Lowess(5) (also a global temperature anomaly in degrees Celcius, but with the Lowess smoothing algorithm applied over a 5 year window to average out spikes).
+
 ### Q5 (1 point)
 
 Construct code to import dataset in a format that can be used for transforming and visualization.
+
+```{r}
+GISS_temp <- read_table("https://data.giss.nasa.gov/gistemp/graphs/graph_data/Global_Mean_Estimates_based_on_Land_and_Ocean_Data/graph.txt",
+                  col_names = c("Year", "no_smoothing", "Lowess(5)"), skip = 5)
+
+head(GISS_temp)
+```
 
 ### Q6 (1 point)
 
 Plot the trend in global mean temperature over time. Describe what you see and how you interpret the patterns you observe.
 
+```{r}
+ggplot(data = GISS_temp, aes(x = Year, y = no_smoothing)) + geom_line() + 
+  geom_point(size = 0.5) + labs(x = "Year", y = "Mean Global Temperature Anamoly (Degrees C)")
+```
+
+I see a pattern of exponential growth in temperature. While there are year to year changes in the mean global temperature anomaly, which I would say at a glance look somewhat cyclic, the increase in temperature over time far dwarfs the largest of those variations (the year to year variation looks like a quarter of a degree at maximum, compared to nearly a degree and a half increase over the last 50 years). The most recent years are the warmest shown in this time scale. Therefore I would say that there is a strong rate of global warming that has been about constant, if not increasing, since about 1980.
+
 ### Q7 (1 point)
 
-Consider the "pause" analyzed in Lewandowsky et al. 2016. Do you see evidence for such a pause? 
+Consider the "pause" analyzed in Lewandowsky et al. 2016. Do you see evidence for such a pause?
+
+In recent years, there is clearly no evidence for a pause; the global temperature is higher than ever and increasing sharply. Around 2016, when Lewandowsky were discussing a pause, there are a few years (maybe a decade or so) that seem to have a reduced rate of warming, but considering there is a spike in warming immediately afterwards and that this reduced rate seems well within the normal year to year variation I would not say this consists of a pause.
 
 ### Bonus 1 (1 point)
+
 Recreate the analysis from Lewandowsky's Fig. 1.
 
 ## Long term records of CO2
@@ -98,4 +152,5 @@ Transform the data as needed to create a plot in chronological order. Add at lea
 Join your data with the Mauna Loa data and plot together, considering different colors for the different datasets.
 
 ### Bonus 2 (1 point)
+
 Write a catchy title and short description in the style of a NYtimes infographic, contrasting the rate of anthropogenic vs. background climate change for a general public audience.
