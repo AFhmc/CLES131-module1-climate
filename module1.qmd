@@ -143,9 +143,38 @@ After downloading this dataset, create a folder entitled `data` and save the fil
 
 After downloading this dataset, create a folder entitled `data` and save the file within the folder with a .txt extension. Read this file into R. What are the columns and units? How were these data obtained?
 
+```{r}
+long_term_co2 <-read_table("data/vostok_icecore_co2.txt", 
+                  comment="*",
+                  col_names = c("Depth", "Ice_Age", "Air_Age", "CO2_conc"), skip = 21,
+                  na = c("-1", "-99.99"))
+head(long_term_co2)
+```
+
+The data was obtained by measurements of air trapped in ice cores at Vostok; measuring at different depths the age of the ice (calculated from depth based on prior scientific knowledge), calculating the age of the air trapped in that ice (based on the age of the ice and accumulation rate), and finding the concentration of CO2 in that ice. The columns are depth of ice, which has units of meters; the age of the ice, which has units of years before present (where present is defined as 1950, according to my googling); the mean age of the air trapped in that ice, which also has units of years before present, and the CO2 concentration of that ice, which has units of parts per million.
+
 ### Q9 (1 point)
 
 Transform the data as needed to create a plot in chronological order. Add at least two different smoothing window averages to your plot.
+
+```{r}
+#get year of air; 1950 - mean air age
+long_term_co2<-long_term_co2 |> mutate(AirYear = 1950 - Air_Age)
+#order chronologically
+long_term_co2 <- long_term_co2 |> arrange(AirYear)
+head(long_term_co2)
+
+
+```
+
+```{r}
+#Get moving average over 5 thousand years
+
+```
+
+```{r}
+long_term_co2 |> ggplot(aes(x=AirYear, y = CO2_conc)) + geom_point() + geom_line()
+```
 
 ### Q10 (1 point)
 
