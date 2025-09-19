@@ -146,7 +146,7 @@ After downloading this dataset, create a folder entitled `data` and save the fil
 ```{r}
 long_term_co2 <-read_table("data/vostok_icecore_co2.txt", 
                   comment="*",
-                  col_names = c("Depth", "Ice_Age", "Air_Age", "CO2_conc"), skip = 21,
+                  col_names = c("Depth", "Ice_Age", "Air_Age", "mean_CO2_conc"), skip = 21,
                   na = c("-1", "-99.99"))
 head(long_term_co2)
 ```
@@ -168,12 +168,40 @@ head(long_term_co2)
 ```
 
 ```{r}
-#Get moving average over 5 thousand years
+#Make function to get moving average of window size s (s in air years, such that the value for each year is the average of all points with years between year-s/2 and year+s/2 ). Takes however many points are in that range (so the edge points will be a bit weird)
 
+#Note: I googled how to define a function, and some other nitpicky type handling things
+
+moving_window_avg <- function(df, s) {
+  output <- vector(length = nrow(df))
+  for (row in 1:nrow(df)) {
+    row_year <- pull(df, AirYear)[row]
+    window_mean <- df |> filter(between(AirYear, row_year - s/2, row_year + s/2)) |> summarise(mean(mean_CO2_conc))
+    output[row] <- window_mean[[1]]
+  }
+  return(output)
+}
+
+
+#Use on data: 
+long_term_co2 <- long_term_co2 |>
+  mutate(moving_window_5000 = moving_window_avg(long_term_co2,5000),
+         moving_window_50000 = moving_window_avg(long_term_co2,50000))
+head(long_term_co2)
 ```
 
 ```{r}
-long_term_co2 |> ggplot(aes(x=AirYear, y = CO2_conc)) + geom_point() + geom_line()
+#Pivot long so I can colorcode 
+pivoted_long_term_co2 <- long_term_co2 |> 
+  pivot_longer(cols = c(mean_CO2_conc, moving_window_5000, moving_window_50000), 
+               names_to = "Smoothing Scheme", values_to = "CO2conc")
+
+
+
+#I googled how to change legend labels
+pivoted_long_term_co2 |> ggplot(aes(x=AirYear, y = CO2conc, color = `Smoothing Scheme`)) + geom_point() + geom_line() + 
+  scale_color_discrete(labels = c("Unsmoothed", "5000 Year Moving Window", "50,000 Year Moving Window")) +
+  labs(x = "Mean Year of Air Source (ref 0 CE)", y = "CO2 Concentration (ppm)")
 ```
 
 ### Q10 (1 point)
