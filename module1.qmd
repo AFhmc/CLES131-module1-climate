@@ -208,6 +208,33 @@ pivoted_long_term_co2 |> ggplot(aes(x=AirYear, y = CO2conc, color = `Smoothing S
 
 Join your data with the Mauna Loa data and plot together, considering different colors for the different datasets.
 
+I will plot the unsmoothed data to avoid confusion, since the Mauna Loa data is unsmoothed
+
+```{r}
+
+#Get only the air years and average CO2 conc for the longterm data
+long_term_co2_only_avg <- long_term_co2 |> 
+  rename(all_of(c(year = "AirYear", average= "mean_CO2_conc"))) |> select(c(year, average))
+
+#Get column of dataset
+co2 <- co2 |> mutate(dataset = "Mauna Loa")
+long_term_co2_only_avg <- long_term_co2_only_avg |> mutate(dataset = "Vostok Ice Core")
+
+#combine datasets
+combined_co2 <- rbind(long_term_co2_only_avg,select(co2, c(year, average,dataset)))
+```
+
+```{r}
+#plot
+combined_co2 |> ggplot(aes(x = year, y =average, color = dataset)) + geom_point() + geom_line() + labs(x = "Year", y = "CO2 concentration (ppm)", color = "Data source")
+```
+
 ### Bonus 2 (1 point)
 
 Write a catchy title and short description in the style of a NYtimes infographic, contrasting the rate of anthropogenic vs. background climate change for a general public audience.
+
+```{r}
+combined_co2 |> ggplot(aes(x = year, y =average, color = dataset)) + geom_point() + geom_line() + labs(x = "Year", y = "CO2 concentration (ppm)", color = "Data source", title = "Highest CO2 Concentration in 400,000 years")
+```
+
+For more than 400,000 years, CO2 concentrations followed a cycle oscillating from around 200 to 300 ppm, with each cycle lasting around 100,000 years. Now, we have increased CO2 concentrations by over 100ppm in the last century alone, resulting in CO2 values more than 100ppm higher than have been seen in more than 400,000 years.
